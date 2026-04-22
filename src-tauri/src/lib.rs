@@ -20,7 +20,7 @@ use std::sync::Arc;
 use log::{info, warn};
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
-use tauri::{Emitter, Manager, State};
+use tauri::{Emitter, State};
 
 use crate::diffing::{evaluate, SpeakEvent, TypingState};
 use crate::tts::TtsHandle;
@@ -140,19 +140,22 @@ fn watcher_available(state: State<'_, AppState>) -> bool {
 // Bootstrap
 // ---------------------------------------------------------------------------
 
-/// Spawn the correct platform watcher. Returns `None` if the OS APIs
-/// are unavailable (e.g. macOS permission denied) so the app can still
-/// run in editor-only mode.
+/// Spawn the correct platform watcher. The probe is constructed on the
+/// watcher thread itself (COM / AX handles are per-thread), so here we
+/// just return a handle. If the OS APIs ultimately turn out to be
+/// unavailable the watcher thread logs and exits — the app keeps
+/// running in editor-only mode.
 fn spawn_platform_watcher(tts: &TtsHandle) -> Option<WatcherHandle> {
     #[cfg(windows)]
     {
-        let probe = watcher_windows::try_new()?;
-        return Some(watcher::spawn(probe, tts.clone()));
+        return Some(watcher::spawn(
+            watcher_windows::try_new,
+            tts.clone(),
+        ));
     }
     #[cfg(target_os = "macos")]
     {
-        let probe = watcher_macos::try_new()?;
-        return Some(watcher::spawn(probe, tts.clone()));
+        return Some(watcher::spawn(watcher_macos::try_new, tts.clone()));
     }
     #[allow(unreachable_code)]
     {

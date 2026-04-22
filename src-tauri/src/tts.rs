@@ -96,13 +96,10 @@ fn worker_loop(rx: mpsc::Receiver<Command>) {
     };
 
     // Normalize the engine's native rate range to a `0.5..=2.0` scale.
-    let (min_rate, max_rate, normal_rate) = engine
-        .min_rate()
-        .ok()
-        .zip(engine.max_rate().ok())
-        .zip(engine.normal_rate().ok())
-        .map(|((lo, hi), n)| (lo, hi, n))
-        .unwrap_or((0.5, 2.0, 1.0));
+    // Note: `tts` 0.26 returns plain `f32` (not `Result<f32>`).
+    let min_rate = engine.min_rate();
+    let max_rate = engine.max_rate();
+    let normal_rate = engine.normal_rate();
 
     while let Ok(cmd) = rx.recv() {
         match cmd {

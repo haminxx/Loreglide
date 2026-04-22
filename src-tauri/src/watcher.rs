@@ -30,7 +30,13 @@ pub struct FocusSnapshot {
 
 /// Platform-specific probe implementation. Each platform builds its own
 /// `FocusProbe` that knows how to take one synchronous snapshot.
-pub trait FocusProbe: Send + 'static {
+///
+/// The probe does NOT need to be `Send` — we always construct it
+/// *inside* the watcher thread via a factory closure. On Windows this
+/// matters because the UIAutomation COM interfaces hold `NonNull<c_void>`
+/// and are per-thread; on macOS the AX APIs are similarly tied to the
+/// thread that owns the accessibility client.
+pub trait FocusProbe: 'static {
     fn snapshot(&mut self) -> Option<FocusSnapshot>;
 }
 
@@ -60,11 +66,15 @@ impl WatcherHandle {
 
 /// Spawn the watcher loop on a dedicated thread.
 ///
-/// * `probe` is the OS-specific snapshotter.
-/// * `tts` receives any word/sentence events emitted by the diffing engine.
-/// * The returned `WatcherHandle` lets the UI toggle it on/off at runtime
-///   and adjust polling cadence.
-pub fn spawn<P: FocusProbe>(mut probe: P, tts: TtsHandle) -> WatcherHandle {
+/// `factory` is a `Send` closure that constructs the OS-specific probe
+/// *inside* the watcher thread — necessary because most OS accessibility
+/// handles (COM / AX) aren't `Send`. If the factory returns `None` the
+/// watcher exits immediately (the user will get editor-only mode).
+pub fn spawn<F, P>(factory: F, tts: TtsHandle) -> WatcherHandle
+where
+    F: FnOnce() -> Option<P> + Send + 'static,
+    P: FocusProbe,
+{
     let enabled = Arc::new(AtomicBool::new(false));
     let interval = Arc::new(Mutex::new(100u64));
 
@@ -74,6 +84,10 @@ pub fn spawn<P: FocusProbe>(mut probe: P, tts: TtsHandle) -> WatcherHandle {
     thread::Builder::new()
         .name("loreglide-watcher".into())
         .spawn(move || {
+            let Some(mut probe) = factory() else {
+                warn!("probe factory returned None; watcher thread exiting");
+                return;
+            };
             let mut state = TypingState::new();
             let mut current_focus = FocusId::default();
             loop {
