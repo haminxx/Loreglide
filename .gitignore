@@ -33,3 +33,4 @@ src-tauri/gen/schemas/
 
 # Local helper scripts produced during setup
 install-buildtools.bat
+.git-commit-msg.tmp
