@@ -13,7 +13,7 @@ use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 
-use crate::diffing::{evaluate, TypingState};
+use crate::diffing::{evaluate, SpeakEvent, TypingState};
 use crate::tts::TtsHandle;
 
 /// Opaque identifier for a focused control. Used to detect "focus moved
@@ -46,6 +46,16 @@ pub struct WatcherHandle {
     interval_ms: Arc<Mutex<u64>>,
 }
 
+/// A no-op probe for platforms we don't have accessibility integrations for.
+/// `make_probe_factory` returns `|| None` on such platforms so the watcher
+/// thread exits immediately and the app effectively runs in editor-only mode.
+pub struct NullProbe;
+impl FocusProbe for NullProbe {
+    fn snapshot(&mut self) -> Option<FocusSnapshot> {
+        None
+    }
+}
+
 impl WatcherHandle {
     pub fn set_enabled(&self, on: bool) {
         self.enabled.store(on, Ordering::SeqCst);
@@ -66,14 +76,18 @@ impl WatcherHandle {
 
 /// Spawn the watcher loop on a dedicated thread.
 ///
-/// `factory` is a `Send` closure that constructs the OS-specific probe
-/// *inside* the watcher thread — necessary because most OS accessibility
-/// handles (COM / AX) aren't `Send`. If the factory returns `None` the
-/// watcher exits immediately (the user will get editor-only mode).
-pub fn spawn<F, P>(factory: F, tts: TtsHandle) -> WatcherHandle
+/// * `factory` — constructs the OS-specific probe *inside* the watcher
+///   thread (COM / AX handles aren't `Send`). If the factory returns
+///   `None` the watcher thread exits and the UI falls back to editor mode.
+/// * `tts` — handle the watcher uses to speak completed words / sentences.
+/// * `on_event` — side-channel callback fired after every successful
+///   speak. lib.rs uses this to `AppHandle::emit` a frontend notification
+///   so the settings window can show a live "last heard" indicator.
+pub fn spawn<F, P, E>(factory: F, tts: TtsHandle, on_event: E) -> WatcherHandle
 where
     F: FnOnce() -> Option<P> + Send + 'static,
     P: FocusProbe,
+    E: Fn(&SpeakEvent) + Send + 'static,
 {
     let enabled = Arc::new(AtomicBool::new(false));
     let interval = Arc::new(Mutex::new(100u64));
@@ -121,6 +135,7 @@ where
                     if let Err(e) = tts.speak_event(&event) {
                         warn!("tts send failed: {e}");
                     }
+                    on_event(&event);
                 }
             }
         })

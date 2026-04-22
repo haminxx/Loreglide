@@ -1,13 +1,15 @@
 # Loreglide
 
-A Grammarly-style typing companion that **speaks what you type in real time**. Every finished word is read out loud the moment you press space. Every finished sentence is read back when you hit `.`, `!`, or `?`. A "Read whole text" button lets you review long paragraphs.
+A **background typing-echo service**. Loreglide silently watches whichever text field is focused — in Cursor, Google Docs, Gmail, VS Code, Word, the browser, Slack, anywhere — and speaks every finished word the moment you press space, plus each finished sentence when you hit `.`, `!`, or `?`.
+
+You don't type *into* Loreglide. You type wherever you normally type. Loreglide lives in the system tray; the window is only a control panel for toggling it on / off and tweaking the voice.
 
 Built for writers, copywriters, directors, novelists — anyone who needs to *hear* their prose to catch what the eye misses.
 
-- **Frontend**: React + TypeScript + Vite, rendered in a Tauri 2 window.
-- **Backend**: Rust (single process, `~15 MB` binary).
-- **TTS**: Native SAPI5 (Windows) / AVSpeechSynthesizer (macOS). Offline, zero-latency, no API keys.
-- **Accessibility**: UI Automation on Windows, AX API on macOS.
+- **Frontend**: React + TypeScript + Vite, rendered in a Tauri 2 window (settings panel only).
+- **Backend**: Rust (single process, `~15 MB` binary, tray-resident).
+- **TTS**: Native SAPI5 / WinRT (Windows) / AVSpeechSynthesizer (macOS). Offline, zero-latency, no API keys.
+- **Accessibility**: UI Automation on Windows, AX API on macOS. Password fields are never read.
 
 ---
 
@@ -84,10 +86,21 @@ The diffing engine ships with a test suite that covers word completion, sentence
 └─────────────────────┘
 ```
 
-Two separately-toggleable modes:
+### Runtime model
 
-1. **Global watch** — reads *any* text field in *any* app. Requires OS accessibility access (see permissions below).
-2. **In-app editor echo** — works everywhere, always, with zero permissions. Useful for initial testing and as a guaranteed fallback.
+- On launch Loreglide installs a **tray icon** and shows its control panel.
+- Clicking the window's close button **hides** the window; the service keeps running. The only way to actually quit is tray-menu → **Quit**.
+- Left-clicking the tray icon toggles the window. Right-clicking opens the menu.
+- Global watch defaults to **OFF** — nothing is read until you opt in.
+
+### Two toggleable sources
+
+1. **Global watch (primary)** — reads *any* text field in *any* app. Requires OS accessibility access (see permissions below). Password fields are skipped via UIA's `IsPassword` property.
+2. **In-window test box (secondary)** — a tiny textarea inside the settings window. Useful for verifying the TTS engine without leaving the app.
+
+### Dev helper
+
+Set `LOREGLIDE_AUTO_WATCH=1` before launching in dev mode to boot with the global watcher already enabled. Lets you script end-to-end tests without clicking the toggle.
 
 ### macOS permission
 
@@ -139,15 +152,15 @@ Loreglide/
 
 ## Settings (exposed in the UI and persisted in-memory)
 
-| Setting              | Range       | Notes                                               |
-| -------------------- | ----------- | --------------------------------------------------- |
-| Global watch         | on / off    | Requires OS accessibility access                    |
-| In-app editor echo   | on / off    | Works everywhere                                    |
-| Speak words          | on / off    | Fires on whitespace                                 |
-| Speak sentences      | on / off    | Fires on `.`, `!`, `?`, `。`, `！`, `？`             |
-| Voice rate           | 0.5 – 2.0   | Mapped to engine-native rate range                  |
-| Volume               | 0 – 1       | Clamped to engine capability                        |
-| Global poll interval | 50 – 500 ms | 100 ms is a good default                            |
+| Setting              | Range       | Notes                                                |
+| -------------------- | ----------- | ---------------------------------------------------- |
+| Global watch         | on / off    | Default **off** · requires OS accessibility access   |
+| Test-box echo        | on / off    | In-window textarea for smoke testing                 |
+| Speak words          | on / off    | Fires on whitespace                                  |
+| Speak sentences      | on / off    | Fires on `.`, `!`, `?`, `。`, `！`, `？`              |
+| Voice rate           | 0.5 – 2.0   | Mapped to engine-native rate range                   |
+| Volume               | 0 – 1       | Clamped to engine capability                         |
+| Global poll interval | 50 – 500 ms | 100 ms is a good default                             |
 
 > Persistence to disk is not wired up yet — see the roadmap.
 
@@ -155,12 +168,16 @@ Loreglide/
 
 ## Roadmap
 
-- [ ] Persist settings to `AppData`/`~/Library/Application Support`
-- [ ] System tray icon with quick-toggle for global watch
-- [ ] Per-app allow/deny list for global watch
-- [ ] Grammar review (pass completed sentences through an LLM for suggestions)
+- [ ] Persist settings to `AppData` / `~/Library/Application Support`
+- [ ] Per-app allow / deny list for global watch
+- [ ] Grammar review — pass completed sentences through an LLM for suggestions
 - [ ] Alternate TTS engines (ElevenLabs, local Piper) behind a plugin trait
 - [ ] Global hotkey to pause / resume
+- [ ] Auto-start on login (opt-in)
+- [x] System tray icon with quick-toggle for global watch
+- [x] Close-to-tray behavior instead of quit
+- [x] Skip password fields in Windows UIA probe
+- [x] Live "last heard" readout in the UI
 
 ---
 

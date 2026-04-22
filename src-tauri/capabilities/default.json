@@ -8,6 +8,8 @@
     "core:event:default",
     "core:window:default",
     "core:app:default",
-    "core:path:default"
+    "core:path:default",
+    "core:tray:default",
+    "core:menu:default"
   ]
 }

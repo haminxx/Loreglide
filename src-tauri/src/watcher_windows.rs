@@ -38,6 +38,14 @@ impl FocusProbe for WindowsProbe {
             }
         };
 
+        // PRIVACY: never read password fields. UIA exposes the
+        // `IsPassword` property; any control that claims it stores
+        // secret text is skipped silently.
+        if matches!(element.is_password(), Ok(true)) {
+            trace!("skipping focused password field");
+            return None;
+        }
+
         // Build a stable identity for this element so we can detect
         // focus changes. Runtime IDs are the most reliable identifier
         // UIA provides; fall back to (process_id, control_type, name).
