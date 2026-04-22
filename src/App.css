@@ -1,0 +1,261 @@
+/* Brutalist: stark black/white, hard edges, chunky type, zero decoration. */
+
+:root {
+  --ink: #000;
+  --paper: #fff;
+  --mute: #666;
+  --line: 2px solid var(--ink);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "IBM Plex Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  font-weight: 500;
+}
+
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  padding: 16px;
+  gap: 16px;
+}
+
+.bar {
+  border: var(--line);
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.logo {
+  font-weight: 900;
+  font-size: 22px;
+  letter-spacing: 0.2em;
+}
+
+.tag {
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  color: var(--mute);
+  text-transform: uppercase;
+}
+
+.panel {
+  border: var(--line);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.panel-title {
+  margin: 0 0 4px 0;
+  font-size: 12px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  border-bottom: var(--line);
+  padding-bottom: 8px;
+}
+
+/* ---- Toggle ---- */
+.toggle {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  column-gap: 10px;
+  row-gap: 2px;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  padding: 2px 0;
+}
+
+.toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-box {
+  width: 18px;
+  height: 18px;
+  border: var(--line);
+  background: var(--paper);
+  position: relative;
+}
+
+.toggle input:checked + .toggle-box::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  background: var(--ink);
+}
+
+.toggle input:focus-visible + .toggle-box {
+  outline: 2px dashed var(--ink);
+  outline-offset: 2px;
+}
+
+.toggle-label {
+  font-size: 13px;
+}
+
+.toggle-hint {
+  grid-column: 2;
+  font-size: 11px;
+  color: var(--mute);
+}
+
+.toggle.is-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ---- Slider ---- */
+.slider {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.slider-label {
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.slider input[type="range"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  background: transparent;
+}
+
+.slider input[type="range"]::-webkit-slider-runnable-track {
+  height: 2px;
+  background: var(--ink);
+}
+
+.slider input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 16px;
+  width: 16px;
+  background: var(--paper);
+  border: var(--line);
+  margin-top: -7px;
+}
+
+.slider input[type="range"]::-moz-range-track {
+  height: 2px;
+  background: var(--ink);
+}
+
+.slider input[type="range"]::-moz-range-thumb {
+  height: 16px;
+  width: 16px;
+  background: var(--paper);
+  border: var(--line);
+  border-radius: 0;
+}
+
+/* ---- Editor ---- */
+.editor {
+  width: 100%;
+  min-height: 180px;
+  border: var(--line);
+  padding: 12px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  resize: vertical;
+  background: var(--paper);
+  color: var(--ink);
+  outline: none;
+}
+
+.editor:focus {
+  outline: 2px solid var(--ink);
+  outline-offset: -2px;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  border: var(--line);
+  background: var(--ink);
+  color: var(--paper);
+  padding: 10px 14px;
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.btn-ghost {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.btn-ghost:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.status {
+  border-top: var(--line);
+  padding-top: 8px;
+  font-size: 12px;
+  min-height: 20px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.status-kind {
+  background: var(--ink);
+  color: var(--paper);
+  padding: 2px 6px;
+  letter-spacing: 0.2em;
+  font-size: 10px;
+}
+
+.status-idle {
+  color: var(--mute);
+  font-style: italic;
+}
+
+.status-text {
+  font-weight: 700;
+}
+
+.foot {
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--mute);
+  padding: 8px 0;
+}
