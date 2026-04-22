@@ -1,0 +1,14 @@
+# Line-ending normalization.
+# Source files check in as LF; the working tree on Windows can still use CRLF.
+* text=auto eol=lf
+
+# Binary assets — never touch.
+*.png binary
+*.ico binary
+*.icns binary
+*.exe binary
+*.dll binary
+
+# Batch files must stay CRLF to run reliably under cmd.exe.
+*.bat text eol=crlf
+*.cmd text eol=crlf
